@@ -36,12 +36,12 @@ class House {
  }
  String _buildVerse(int verse) {
   final parts = <String> [];
-  parts.add('This is ${_subjects[verse -1]} ');
+  parts.add('This is ${_subjects[verse -1]}');
 
   for (int i = verse - 1; i > 0; i--) {
     parts.add(_actions[i]);
   }
   parts.add(_actions[0]);
-  return parts.join('');
+  return parts.join(' ');
  }
 }
