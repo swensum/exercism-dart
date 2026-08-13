@@ -1,0 +1,25 @@
+{
+  "authors": [
+    "Stargator"
+  ],
+  "contributors": [
+    "kytrinyx"
+  ],
+  "files": {
+    "solution": [
+      "lib/anagram.dart"
+    ],
+    "test": [
+      "test/anagram_test.dart"
+    ],
+    "example": [
+      ".meta/lib/example.dart"
+    ],
+    "invalidator": [
+      "pubspec.yaml"
+    ]
+  },
+  "blurb": "Find the words that use the same letters as another word.",
+  "source": "Inspired by the Extreme Startup game",
+  "source_url": "https://github.com/rchatley/extreme_startup"
+}
