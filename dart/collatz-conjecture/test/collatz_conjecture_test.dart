@@ -3,11 +3,6 @@ import 'package:test/test.dart';
 
 void main() {
   final collatzConjecture = CollatzConjecture();
-
-  /// We are using a predicate to better match the error message from collatzConjecture.
-  /// Knowing about predicates are not needed for completing this exercise,
-  /// but you can find out more info at https://pub.dev/documentation/test/latest/
-  /// if you wish to learn more about predicates and matchers used in Unit Testing for Dart.
   final onlyPositive = predicate(
       (ArgumentError e) => e.message == 'Only positive integers are allowed',
       'an ArgumentError with the message "Only positive integers are allowed"');
