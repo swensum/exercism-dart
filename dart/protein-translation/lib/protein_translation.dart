@@ -1,0 +1,58 @@
+class ProteinTranslation {
+ List<String> translate(String rna){
+  final proteins = <String>[];
+  for(var i = 0; i < rna.length; i += 3){
+    //Not enough characters left for a complete codon.
+    if(i + 3 > rna.length){
+      throw ArgumentError();
+    }
+    final codon = rna.substring(i, i + 3);
+
+    switch (codon) {
+      case 'AUG':
+        proteins.add('Methionine');
+        break;
+
+      case 'UUU':
+      case 'UUC':
+        proteins.add('Phenylalanine');
+        break;
+
+      case 'UUA':
+      case 'UUG':
+        proteins.add('Leucine');
+        break;
+
+      case 'UCU':
+      case 'UCC':
+      case 'UCA':
+      case 'UCG':
+        proteins.add('Serine');
+        break;
+
+      case 'UAU':
+      case 'UAC':
+         proteins.add('Tyrosine');
+         break;
+
+      case 'UGU':
+      case 'UGC':
+        proteins.add('Cysteine');
+        break;
+
+      case 'UGG':
+        proteins.add('Tryptophan');
+        break;
+
+      case 'UAA':
+      case 'UAG':
+      case 'UGA':
+        return proteins;
+
+      default:
+        throw ArgumentError();                 
+    }
+  }
+  return proteins;
+ }
+}
