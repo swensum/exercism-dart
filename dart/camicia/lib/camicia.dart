@@ -8,12 +8,10 @@ class Camicia {
 
     final pile = <String>[];
 
-    var currentPlayer = 0; // 0 = A, 1 = B
+    var currentPlayer = 0;
     var cardsPlayed = 0;
     var tricks = 0;
 
-    // A state is represented by both decks and whose turn it is.
-    // Number cards are ignored when detecting loops.
     final seenStates = <String>{};
 
     while (true) {
@@ -29,124 +27,90 @@ class Camicia {
 
       seenStates.add(state);
 
-      final result = _playRound(
-        a,
-        b,
-        pile,
-        currentPlayer,
-        cardsPlayed,
-      );
+      var penalty = 0;
+      var payer = -1;
+      var paymentPlayer = -1;
 
-      cardsPlayed = result.cardsPlayed;
-      currentPlayer = result.nextPlayer;
+      while (true) {
+        final deck = currentPlayer == 0 ? a : b;
 
-      if (result.finished) {
-        return {
-          'status': 'finished',
-          'cards': cardsPlayed,
-          'tricks': tricks + 1,
-        };
-      }
+        // The current player has no card to play.
+        if (deck.isEmpty) {
+          final winner = 1 - currentPlayer;
 
-      if (result.trickWon) {
-        tricks++;
+          if (winner == 0) {
+            a.addAll(pile);
+          } else {
+            b.addAll(pile);
+          }
 
-        final winner = result.winner!;
+          pile.clear();
+          tricks++;
 
-        if (winner == 0) {
-          a.addAll(pile);
-        } else {
-          b.addAll(pile);
-        }
-
-        pile.clear();
-
-        // The player who collected the pile starts the next round.
-        currentPlayer = winner;
-
-        // If one player has all cards, the game is finished.
-        if (a.isEmpty || b.isEmpty) {
           return {
             'status': 'finished',
             'cards': cardsPlayed,
             'tricks': tricks,
           };
         }
-      }
-    }
-  }
 
-  _RoundResult _playRound(
-    List<String> a,
-    List<String> b,
-    List<String> pile,
-    int startingPlayer,
-    int cardsPlayed,
-  ) {
-    var currentPlayer = startingPlayer;
+        final card = deck.removeAt(0);
+        pile.add(card);
+        cardsPlayed++;
 
-    // -1 means there is currently no payment.
-    var penalty = 0;
+        final payment = _paymentValue(card);
 
-    // Player who must currently pay the penalty.
-    var payer = -1;
+        if (payment != null) {
+          // A face card starts a new penalty.
+          penalty = payment;
 
-    // Player who played the last payment card.
-    var lastPaymentPlayer = -1;
+          // The opponent must now pay.
+          payer = 1 - currentPlayer;
 
-    while (true) {
-      final deck = currentPlayer == 0 ? a : b;
+          // Remember who played the face card.
+          paymentPlayer = currentPlayer;
 
-      // Current player cannot play a card.
-      if (deck.isEmpty) {
-        final winner = 1 - currentPlayer;
-
-        return _RoundResult(
-          cardsPlayed: cardsPlayed,
-          nextPlayer: winner,
-          trickWon: true,
-          winner: winner,
-          finished: false,
-        );
-      }
-
-      final card = deck.removeAt(0);
-      pile.add(card);
-      cardsPlayed++;
-
-      final payment = _paymentValue(card);
-
-      if (payment != null) {
-        // A new payment card starts a new penalty.
-        penalty = payment;
-        payer = 1 - currentPlayer;
-        lastPaymentPlayer = currentPlayer;
-
-        // The player who played the payment card gets the next turn
-        // to see whether the opponent can pay it.
-        currentPlayer = payer;
-        continue;
-      }
-
-      // Number card.
-      if (penalty > 0) {
-        penalty--;
-
-        if (penalty == 0) {
-          // The last payment player wins the pile.
-          return _RoundResult(
-            cardsPlayed: cardsPlayed,
-            nextPlayer: lastPaymentPlayer,
-            trickWon: true,
-            winner: lastPaymentPlayer,
-            finished: false,
-          );
+          currentPlayer = payer;
+          continue;
         }
 
-        currentPlayer = 1 - currentPlayer;
-      } else {
-        // Normal play: switch players.
-        currentPlayer = 1 - currentPlayer;
+        // Normal number card.
+        if (penalty > 0) {
+          penalty--;
+
+          if (penalty == 0) {
+            // The player who played the last face card
+            // wins the entire pile.
+            final winner = paymentPlayer;
+
+            if (winner == 0) {
+              a.addAll(pile);
+            } else {
+              b.addAll(pile);
+            }
+
+            pile.clear();
+            tricks++;
+
+            currentPlayer = winner;
+
+            if (a.isEmpty || b.isEmpty) {
+              return {
+                'status': 'finished',
+                'cards': cardsPlayed,
+                'tricks': tricks,
+              };
+            }
+
+            break;
+          }
+
+          // The same player continues paying.
+          currentPlayer = payer;
+        } else {
+          // Normal turn: switch players.
+          currentPlayer = 1 - currentPlayer;
+        }
       }
     }
   }
@@ -171,33 +135,23 @@ class Camicia {
     List<String> b,
     int currentPlayer,
   ) {
-    // Number cards are intentionally normalized to the same value
-    // because their actual values don't matter for loop detection.
-    String normalize(List<String> deck) {
-      return deck.map((card) {
+    String deckState(List<String> deck) {
+      final result = StringBuffer();
+
+      for (final card in deck) {
         if (_paymentValue(card) != null) {
-          return card;
+          // Keep A, K, Q, J.
+          result.write(card);
+        } else {
+          // Number cards are ignored,
+          // but their POSITION is preserved.
+          result.write('-');
         }
-        return 'N';
-      }).join(',');
+      }
+
+      return result.toString();
     }
 
-    return '${currentPlayer}|${normalize(a)}|${normalize(b)}';
+    return '$currentPlayer|${deckState(a)}|${deckState(b)}';
   }
-}
-
-class _RoundResult {
-  final int cardsPlayed;
-  final int nextPlayer;
-  final bool trickWon;
-  final int? winner;
-  final bool finished;
-
-  _RoundResult({
-    required this.cardsPlayed,
-    required this.nextPlayer,
-    required this.trickWon,
-    required this.winner,
-    required this.finished,
-  });
 }
